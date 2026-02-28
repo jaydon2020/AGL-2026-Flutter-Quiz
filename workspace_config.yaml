@@ -1,0 +1,18 @@
+setup_project: agl
+setup_distro: agl-demo
+setup_machine: qemux86-64
+setup_target: agl-demo-platform
+setup_manifest: master
+setup_repo_url: https://gerrit.automotivelinux.org/gerrit/AGL/AGL-repo
+setup_branch: master
+workspace:
+  layers:
+    - name: meta-flutter
+      url: https://github.com/meta-flutter/meta-flutter.git
+      branch: master
+    - name: meta-gsoc26
+      url: file:///home/jd-msi/Disk2/gsoc26/gsoc26-agl-demo/meta-gsoc26
+      branch: master
+  bblayers:
+    - meta-flutter
+    - meta-gsoc26

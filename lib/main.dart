@@ -74,12 +74,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _initKuksaConnection() async {
     // 1. Establish the gRPC channel to the local databroker
+    // _channel = ClientChannel(
+    //   '127.0.0.1',
+    //   port: 55555,
+    //   options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
+    // );
+    // Establish the gRPC channel to the host machine's Docker container
     _channel = ClientChannel(
-      '127.0.0.1',
+      '192.168.100.81', // Updated from '127.0.0.1'
       port: 55555,
       options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
     );
-
     // 2. Initialize the generated KUKSA Client
     _client = kuksa_val.VALClient(_channel);
 

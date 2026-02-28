@@ -1,16 +1,14 @@
-SUMMARY = "AGL GSoC 2026 Flutter Demo App"
-DESCRIPTION = "A Flutter application built for the AGL GSoC 2026 screening challenge."
-AUTHOR = "Jian De (Jaydon)"
-HOMEPAGE = "https://github.com/meta-flutter/workspace-automation"
-
+SUMMARY = "AGL GSoC 2026 Flutter Quiz"
+HOMEPAGE = "https://github.com/jaydon2020/AGL-2026-Flutter-Quiz"
 LICENSE = "CLOSED"
+SECTION = "graphics"
+PV = "1.0+git${SRCREV}"
 
-SRC_URI = "file:///home/jd-msi/Disk2/gsoc26/gsoc26-agl-demo/gsoc26_flutter_quiz/ \
-           "
+SRC_URI = "git://github.com/jaydon2020/AGL-2026-Flutter-Quiz.git;protocol=https;branch=main"
+SRCREV = "${AUTOREV}"
+S = "${WORKDIR}/git"
 
-S = "${WORKDIR}/gsoc26_flutter_quiz"
-
-inherit flutter-app
+inherit flutter-app agl-app
 
 # Dependencies needed for D-Bus and Audioplayers Linux
 DEPENDS += " \
@@ -26,6 +24,10 @@ RDEPENDS:${PN} += " \
     gstreamer1.0-plugins-good \
 "
 
-# App-specific variables
-FLUTTER_APPLICATION_PATH = "${S}"
-FLUTTER_BUILD_ARGS = "bundle"
+PUBSPEC_APPNAME = "gsoc26_flutter_quiz"
+PUBSPEC_IGNORE_LOCKFILE = "1"
+FLUTTER_APPLICATION_INSTALL_PREFIX = "/usr/share/flutter"
+AGL_APP_TEMPLATE = "agl-app-flutter"
+AGL_APP_NAME = "AGL GSoC 2026 Flutter Quiz"
+AGL_APP_ID = "gsoc26_flutter_quiz"
+

@@ -143,6 +143,9 @@ class _MyHomePageState extends State<MyHomePage> {
       // Easiest is to point to the asset deployed on the filesystem or assume simple 'sound.mp3' triggers the logic
       final String filePath = 'assets/sound.mp3';
 
+      // Step 0: Tell C++ to create the player instance
+      await _audioChannel.invokeMethod('create', {'playerId': _playerId});
+
       // Step 1: Tell C++ to load the file
       await _audioChannel.invokeMethod('setSourceUrl', {
         'playerId': _playerId,

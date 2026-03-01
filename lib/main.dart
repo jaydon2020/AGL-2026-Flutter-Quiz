@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:grpc/grpc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -46,7 +46,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _osVersion = 'Unknown';
   bool _showImage = false;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  static const MethodChannel _audioChannel = MethodChannel(
+    'xyz.luan/audioplayers',
+  );
+  final String _playerId = 'test_player_id';
+  String _statusMessage = '';
+  bool _isError = false;
+
   late ClientChannel _channel;
   late kuksa_val.VALClient _client;
   double _currentSpeed = 65.0; // Default matches HTML
@@ -132,16 +138,39 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _playSound() async {
     try {
-      await _audioPlayer.play(AssetSource('sound.mp3'));
+      // For testing normally we'd keep Assets, but Toyota backend expects full path
+      // We'll give it a hardcoded path or assume the url is constructed.
+      // Easiest is to point to the asset deployed on the filesystem or assume simple 'sound.mp3' triggers the logic
+      final String filePath = 'assets/sound.mp3';
+
+      // Step 1: Tell C++ to load the file
+      await _audioChannel.invokeMethod('setSourceUrl', {
+        'playerId': _playerId,
+        'url': filePath,
+        'isLocal': true,
+      });
+
+      // Step 2: Tell C++ to push the audio to PipeWire
+      await _audioChannel.invokeMethod('resume', {'playerId': _playerId});
+
+      setState(() {
+        _statusMessage = 'Audio played successfully!';
+        _isError = false;
+      });
     } catch (e) {
       debugPrint('Error playing audio: $e');
+      setState(() {
+        _statusMessage = 'Error playing audio: $e';
+        _isError = true;
+      });
     }
   }
 
   @override
   void dispose() {
+    // Tell the C++ backend to free up the audio resources for this playerId
+    _audioChannel.invokeMethod('release', {'playerId': _playerId});
     _channel.shutdown();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -370,6 +399,22 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
+
+                  // Audio Status Message
+                  if (_statusMessage.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Text(
+                        _statusMessage,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.sourceCodePro(
+                          color: _isError
+                              ? Colors.redAccent
+                              : Colors.greenAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
 
                   // If show image is toggled, an overlay or container in the middle
                   if (_showImage)

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:grpc/grpc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'src/generated/kuksa/val/v1/val.pbgrpc.dart' as kuksa_val;
 import 'src/generated/kuksa/val/v1/types.pb.dart' as kuksa_types;
@@ -138,10 +139,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _playSound() async {
     try {
-      // For testing normally we'd keep Assets, but Toyota backend expects full path
-      // We'll give it a hardcoded path or assume the url is constructed.
-      // Easiest is to point to the asset deployed on the filesystem or assume simple 'sound.mp3' triggers the logic
-      final String filePath = 'assets/sound.mp3';
+      // For the AGL C++ backend, we likely need a real absolute path across the filesystem.
+      // We will extract the bundled asset into the app's temporary directory.
+      final byteData = await rootBundle.load('assets/sound.mp3');
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/sound.mp3');
+      await tempFile.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
+
+      final String filePath = tempFile.path;
 
       // Step 0: Tell C++ to create the player instance
       await _audioChannel.invokeMethod('create', {'playerId': _playerId});

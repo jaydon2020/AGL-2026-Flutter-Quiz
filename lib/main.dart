@@ -173,6 +173,29 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> _setKuksaSpeed(double speed) async {
+    if (!_kuksaConnected) return;
+
+    final entry = kuksa_val.EntryUpdate(
+      entry: kuksa_types.DataEntry(
+        path: 'Vehicle.Speed',
+        value: kuksa_types.Datapoint(float: speed),
+      ),
+      fields: [kuksa_types.Field.FIELD_VALUE],
+    );
+
+    final request = kuksa_val.SetRequest(updates: [entry]);
+
+    try {
+      final response = await _client.set(request);
+      if (response.hasError()) {
+        debugPrint('KUKSA Set Error: ${response.error.message}');
+      }
+    } catch (e) {
+      debugPrint('Failed to set speed: $e');
+    }
+  }
+
   void _toggleImage() {
     setState(() {
       _showImage = !_showImage;
@@ -624,6 +647,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                     setState(() {
                                       _currentSpeed = value;
                                     });
+                                  },
+                                  onChangeEnd: (value) {
+                                    _setKuksaSpeed(value);
                                   },
                                 ),
                               ),

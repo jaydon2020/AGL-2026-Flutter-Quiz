@@ -46,6 +46,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String _osVersion = 'Unknown';
+  String _kernelVersion = 'Unknown';
   bool _showImage = false;
   static const MethodChannel _audioChannel = MethodChannel(
     'xyz.luan/audioplayers',
@@ -55,14 +56,19 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isError = false;
 
   late ClientChannel _channel;
+  bool _channelInitialized = false;
   late kuksa_val.VALClient _client;
   double _currentSpeed = 65.0; // Default matches HTML
   bool _kuksaConnected = false;
+  final TextEditingController _kuksaAddressController = TextEditingController(
+    text: '127.0.0.1:55555',
+  );
 
   @override
   void initState() {
     super.initState();
     _readOsVersion();
+    _readKernelVersion();
     _initKuksaConnection();
   }
 
@@ -88,12 +94,48 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> _readKernelVersion() async {
+    try {
+      final result = await Process.run('uname', ['-r']);
+      if (result.exitCode == 0) {
+        setState(() {
+          _kernelVersion = result.stdout.toString().trim();
+        });
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error reading kernel version: $e');
+    }
+    setState(() {
+      _kernelVersion = 'Could not read kernel version';
+    });
+  }
+
   void _initKuksaConnection() async {
+    if (_channelInitialized) {
+      try {
+        await _channel.shutdown();
+      } catch (e) {
+        debugPrint('Error shutting down channel: $e');
+      }
+    }
+
+    setState(() {
+      _kuksaConnected = false;
+    });
+
+    final addressParts = _kuksaAddressController.text.split(':');
+    final host = addressParts[0].trim();
+    final port = addressParts.length > 1
+        ? int.tryParse(addressParts[1].trim()) ?? 55555
+        : 55555;
+
     _channel = ClientChannel(
-      '127.0.0.1',
-      port: 55555,
+      host,
+      port: port,
       options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
     );
+    _channelInitialized = true;
 
     _client = kuksa_val.VALClient(_channel);
 
@@ -180,6 +222,38 @@ class _MyHomePageState extends State<MyHomePage> {
     _audioChannel.invokeMethod('release', {'playerId': _playerId});
     _channel.shutdown();
     super.dispose();
+  }
+
+  Widget _buildInfoBox(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color.fromRGBO(30, 58, 138, 0.3), // blue-900/30
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color.fromRGBO(59, 130, 246, 0.3), // blue-500/30
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: const Color(0xFF60A5FA)), // blue-400
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.sourceCodePro(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFBFDBFE), // blue-200
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildInteractiveButton({
@@ -312,80 +386,29 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                         ),
                         Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color.fromRGBO(
-                                  23,
-                                  37,
-                                  84,
-                                  0.6,
-                                ), // blue-950/60
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color.fromRGBO(
-                                    96,
-                                    165,
-                                    250,
-                                    0.3,
-                                  ), // blue-400/30
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.person_outline,
-                                size: 40,
-                                color: Color(0xFF3B82F6), // primary
-                              ),
+                            _buildInfoBox(
+                              Icons.badge_outlined,
+                              'Name: JianDe (Jaydon2020)',
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Jane Doe',
-                              style: GoogleFonts.orbitron(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 2.0,
-                              ),
+                            const SizedBox(height: 12),
+                            _buildInfoBox(
+                              Icons.system_update_alt_outlined,
+                              'AGL Version: $_osVersion',
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color.fromRGBO(
-                                  30,
-                                  58,
-                                  138,
-                                  0.3,
-                                ), // blue-900/30
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: const Color.fromRGBO(
-                                    59,
-                                    130,
-                                    246,
-                                    0.2,
-                                  ), // blue-500/20
-                                ),
-                              ),
-                              child: Text(
-                                'AGL Version: $_osVersion (from /etc/os-release)',
-                                style: GoogleFonts.sourceCodePro(
-                                  fontSize: 14,
-                                  color: const Color(0xFFBFDBFE), // blue-200
-                                ),
-                              ),
+                            const SizedBox(height: 12),
+                            _buildInfoBox(
+                              Icons.memory_outlined,
+                              'Kernel: $_kernelVersion',
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
 
                   // Middle Section: Interactive Buttons
                   Row(
@@ -403,6 +426,82 @@ class _MyHomePageState extends State<MyHomePage> {
                           icon: Icons.volume_up_outlined,
                           label: 'PLAY SOUND',
                           onTap: _playSound,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // KUKSA Connection Controls
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GlassPanel(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: TextField(
+                            controller: _kuksaAddressController,
+                            style: GoogleFonts.sourceCodePro(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              labelText: 'KUKSA Address',
+                              labelStyle: TextStyle(
+                                color: Colors.blueGrey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: _initKuksaConnection,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6), // primary
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'CONNECT',
+                            style: GoogleFonts.orbitron(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Status indicator
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _kuksaConnected
+                              ? Colors.green.withValues(alpha: 0.2)
+                              : Colors.red.withValues(alpha: 0.2),
+                          border: Border.all(
+                            color: _kuksaConnected ? Colors.green : Colors.red,
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          _kuksaConnected ? Icons.link : Icons.link_off,
+                          color: _kuksaConnected
+                              ? Colors.greenAccent
+                              : Colors.redAccent,
+                          size: 24,
                         ),
                       ),
                     ],
@@ -440,7 +539,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
 
-                  const Spacer(),
+                  const SizedBox(height: 16),
 
                   // Bottom Section: Dashboard Metrics (The Gauge)
                   Column(

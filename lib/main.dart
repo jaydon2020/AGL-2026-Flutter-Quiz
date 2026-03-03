@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:grpc/grpc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -10,12 +9,24 @@ import 'src/generated/kuksa/val/v1/types.pb.dart' as kuksa_types;
 import 'widgets/glass_panel.dart';
 import 'widgets/speed_gauge.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'kuksa_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final kuksa = KuksaService();
+  try {
+    await kuksa.initialize();
+  } catch (e) {
+    debugPrint(
+      'KuksaService initialization failed (maybe missing exact token/pem?): $e',
+    );
+  }
+  runApp(MyApp(kuksa: kuksa));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final KuksaService kuksa;
+  const MyApp({super.key, required this.kuksa});
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +41,17 @@ class MyApp extends StatelessWidget {
           secondary: Color(0xFF1E3A8A),
         ),
       ),
-      home: const MyHomePage(title: 'AGL IVI Flutter Demo Dashboard Updated'),
+      home: MyHomePage(
+        title: 'AGL IVI Flutter Demo Dashboard Updated',
+        kuksa: kuksa,
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  final KuksaService kuksa;
+  const MyHomePage({super.key, required this.title, required this.kuksa});
 
   final String title;
 
@@ -55,14 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
   String _statusMessage = '';
   bool _isError = false;
 
-  late ClientChannel _channel;
-  bool _channelInitialized = false;
   late kuksa_val.VALClient _client;
   double _currentSpeed = 65.0; // Default matches HTML
   bool _kuksaConnected = false;
-  final TextEditingController _kuksaAddressController = TextEditingController(
-    text: '127.0.0.1:55555',
-  );
 
   @override
   void initState() {
@@ -112,32 +122,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initKuksaConnection() async {
-    if (_channelInitialized) {
-      try {
-        await _channel.shutdown();
-      } catch (e) {
-        debugPrint('Error shutting down channel: $e');
-      }
-    }
-
     setState(() {
       _kuksaConnected = false;
     });
 
-    final addressParts = _kuksaAddressController.text.split(':');
-    final host = addressParts[0].trim();
-    final port = addressParts.length > 1
-        ? int.tryParse(addressParts[1].trim()) ?? 55555
-        : 55555;
-
-    _channel = ClientChannel(
-      host,
-      port: port,
-      options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
-    );
-    _channelInitialized = true;
-
-    _client = kuksa_val.VALClient(_channel);
+    _client = kuksa_val.VALClient(widget.kuksa.channel);
 
     final request = kuksa_val.SubscribeRequest(
       entries: [
@@ -150,7 +139,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     try {
-      final responseStream = _client.subscribe(request);
+      final responseStream = _client.subscribe(
+        request,
+        options: widget.kuksa.authOptions,
+      );
       setState(() {
         _kuksaConnected = true;
       });
@@ -166,10 +158,22 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         onError: (error) {
           debugPrint('KUKSA gRPC Error: $error');
+          setState(() {
+            _kuksaConnected = false;
+          });
         },
+        onDone: () {
+          setState(() {
+            _kuksaConnected = false;
+          });
+        },
+        cancelOnError: true,
       );
     } catch (e) {
       debugPrint('Failed to subscribe: $e');
+      setState(() {
+        _kuksaConnected = false;
+      });
     }
   }
 
@@ -187,7 +191,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final request = kuksa_val.SetRequest(updates: [entry]);
 
     try {
-      final response = await _client.set(request);
+      final response = await _client.set(
+        request,
+        options: widget.kuksa.authOptions,
+      );
       if (response.hasError()) {
         debugPrint('KUKSA Set Error: ${response.error.message}');
       }
@@ -243,7 +250,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void dispose() {
     // Tell the C++ backend to free up the audio resources for this playerId
     _audioChannel.invokeMethod('release', {'playerId': _playerId});
-    _channel.shutdown();
+    widget.kuksa.channel.shutdown();
     super.dispose();
   }
 
@@ -459,30 +466,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   // KUKSA Connection Controls
                   Row(
                     children: [
-                      Expanded(
-                        child: GlassPanel(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          child: TextField(
-                            controller: _kuksaAddressController,
-                            style: GoogleFonts.sourceCodePro(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              labelText: 'KUKSA Address',
-                              labelStyle: TextStyle(
-                                color: Colors.blueGrey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
                       InkWell(
                         onTap: _initKuksaConnection,
                         borderRadius: BorderRadius.circular(12),

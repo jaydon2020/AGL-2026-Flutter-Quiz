@@ -145,6 +145,8 @@ class _MyHomePageState extends State<MyHomePage> {
       );
       setState(() {
         _kuksaConnected = true;
+        _statusMessage = 'KUKSA Connected';
+        _isError = false;
       });
       responseStream.listen(
         (kuksa_val.SubscribeResponse response) {
@@ -160,6 +162,8 @@ class _MyHomePageState extends State<MyHomePage> {
           debugPrint('KUKSA gRPC Error: $error');
           setState(() {
             _kuksaConnected = false;
+            _statusMessage = 'KUKSA Error: $error';
+            _isError = true;
           });
         },
         onDone: () {
@@ -173,33 +177,9 @@ class _MyHomePageState extends State<MyHomePage> {
       debugPrint('Failed to subscribe: $e');
       setState(() {
         _kuksaConnected = false;
+        _statusMessage = 'Subscribe Failed: $e';
+        _isError = true;
       });
-    }
-  }
-
-  Future<void> _setKuksaSpeed(double speed) async {
-    if (!_kuksaConnected) return;
-
-    final entry = kuksa_val.EntryUpdate(
-      entry: kuksa_types.DataEntry(
-        path: 'Vehicle.Speed',
-        value: kuksa_types.Datapoint(float: speed),
-      ),
-      fields: [kuksa_types.Field.FIELD_VALUE],
-    );
-
-    final request = kuksa_val.SetRequest(updates: [entry]);
-
-    try {
-      final response = await _client.set(
-        request,
-        options: widget.kuksa.authOptions,
-      );
-      if (response.hasError()) {
-        debugPrint('KUKSA Set Error: ${response.error.message}');
-      }
-    } catch (e) {
-      debugPrint('Failed to set speed: $e');
     }
   }
 
@@ -563,92 +543,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           letterSpacing: 2.8, // 0.2em roughly
                         ),
                       ),
-                      const SizedBox(height: 24),
                       SpeedGauge(speed: _currentSpeed, maxSpeed: 220.0),
                       const SizedBox(height: 24),
+
                       // Slider matching HTML
-                      GlassPanel(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '0',
-                                    style: GoogleFonts.orbitron(
-                                      fontSize: 12,
-                                      color: const Color(0xFF93C5FD),
-                                    ),
-                                  ),
-                                  Text(
-                                    'SPEED',
-                                    style: GoogleFonts.orbitron(
-                                      fontSize: 12,
-                                      color: const Color(0xFF93C5FD),
-                                    ),
-                                  ),
-                                  Text(
-                                    '220',
-                                    style: GoogleFonts.orbitron(
-                                      fontSize: 12,
-                                      color: const Color(0xFF93C5FD),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  activeTrackColor: const Color(
-                                    0xFF1E3A8A,
-                                  ), // secondary
-                                  inactiveTrackColor: const Color.fromRGBO(
-                                    30,
-                                    58,
-                                    138,
-                                    0.5,
-                                  ), // blue-900/50
-                                  thumbColor: const Color(
-                                    0xFF3B82F6,
-                                  ), // primary
-                                  overlayColor: const Color(
-                                    0xFF3B82F6,
-                                  ).withValues(alpha: 0.2),
-                                  trackHeight: 4,
-                                ),
-                                child: Slider(
-                                  value: _currentSpeed,
-                                  min: 0,
-                                  max: 220,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _currentSpeed = value;
-                                    });
-                                  },
-                                  onChangeEnd: (value) {
-                                    _setKuksaSpeed(value);
-                                  },
-                                ),
-                              ),
-                              Text(
-                                _kuksaConnected
-                                    ? 'Subscribed to Kuksa gRPC'
-                                    : 'Fallback Slider Mode',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.blueGrey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ],

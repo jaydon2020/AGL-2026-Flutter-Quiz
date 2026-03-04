@@ -4,18 +4,12 @@ import 'package:flutter/services.dart';
 
 // Helper to determine the host dynamically
 String getHost() {
-  // If running on the actual Pi (AGL), it uses localhost for the internal broker
-  // If running on Ubuntu, use the Pi's Ethernet IP
-  // The isEmbedded check is simulated here by checking if it's linux but you might
-  // need a more robust check in a real app depending on the environment.
-  // For now we just use the fixed IP or localhost if that's what's needed.
-  // Let's assume we can just use the provided IP for now or you can toggle it.
   const bool isEmbedded = true; // Set to true if running on the pi directly
-  return (Platform.isLinux && !isEmbedded) ? '10.42.0.113' : 'localhost';
+  return (Platform.isLinux && !isEmbedded) ? '10.42.0.113' : '127.0.0.1';
 }
 
 class KuksaConfig {
-  final String hostname = getHost(); // Use the RPi IP or localhost
+  final String hostname = getHost(); // Use the RPi IP or 127.0.0.1
   final int port = 55555;
   final String tlsServerName = 'Server';
 }
@@ -33,11 +27,15 @@ class KuksaService {
     List<int> trustedCertificates;
     String token;
 
-    // 1. Load the CA Certificate (Server.pem)
-    // Try reading from the absolute path used by IVI homescreen demo
-    final pemFile = File('/etc/kuksa-val/Server.pem');
-    if (await pemFile.exists()) {
-      trustedCertificates = await pemFile.readAsBytes();
+    // 1. Load the CA Certificate (Server.pem or CA.pem)
+    final caFile = File('/etc/kuksa-val/CA.pem');
+    final serverFile = File('/etc/kuksa-val/Server.pem');
+
+    if (await caFile.exists()) {
+      trustedCertificates = await caFile.readAsBytes();
+      print('Loaded CA.pem from /etc/kuksa-val/');
+    } else if (await serverFile.exists()) {
+      trustedCertificates = await serverFile.readAsBytes();
       print('Loaded Server.pem from /etc/kuksa-val/');
     } else {
       // Fallback to assets
@@ -63,20 +61,27 @@ class KuksaService {
     _token = token.trim();
 
     // 3. Create Secure Channel
-    _channel = ClientChannel(
-      config.hostname,
-      port: config.port,
-      options: ChannelOptions(
-        credentials: ChannelCredentials.secure(
-          certificates: trustedCertificates,
-          authority: config.tlsServerName,
+    try {
+      _channel = ClientChannel(
+        config.hostname,
+        port: config.port,
+        options: ChannelOptions(
+          credentials: ChannelCredentials.secure(
+            certificates: trustedCertificates,
+            authority: config.tlsServerName,
+          ),
+          connectionTimeout: const Duration(
+            seconds: 5,
+          ), // Fail fast if unreachable
         ),
-      ),
-    );
-
-    print(
-      'KUKSA Service Initialized: Connecting to ${config.hostname}:${config.port}',
-    );
+      );
+      print(
+        'KUKSA Service Initialized: Connecting to ${config.hostname}:${config.port} | Token length: ${_token.length}',
+      );
+    } catch (e) {
+      print('CRITICAL KUKSA INIT ERROR: $e');
+      rethrow;
+    }
   }
 
   // Helper to create CallOptions with the JWT Token

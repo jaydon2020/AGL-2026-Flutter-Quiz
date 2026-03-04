@@ -443,9 +443,44 @@ class _MyHomePageState extends State<MyHomePage> {
 
                   const SizedBox(height: 16),
 
+                  // If show image is toggled, an overlay or container in the middle
+                  if (_showImage)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0),
+                      child: Center(
+                        child: GlassPanel(
+                          padding: const EdgeInsets.all(16),
+                          child: Image.asset(
+                            'assets/agl_logo.png',
+                            height: 100,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ),
+
                   // KUKSA Connection Controls
                   Row(
                     children: [
+                      // Audio/Connection Status Message on the left
+                      if (_statusMessage.isNotEmpty)
+                        Expanded(
+                          child: Text(
+                            _statusMessage,
+                            textAlign: TextAlign.left,
+                            style: GoogleFonts.sourceCodePro(
+                              color: _isError
+                                  ? Colors.redAccent
+                                  : Colors.greenAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      else
+                        const Spacer(),
+
+                      const SizedBox(width: 16),
+
                       InkWell(
                         onTap: _initKuksaConnection,
                         borderRadius: BorderRadius.circular(12),
@@ -492,38 +527,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
-
-                  // Audio Status Message
-                  if (_statusMessage.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: Text(
-                        _statusMessage,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.sourceCodePro(
-                          color: _isError
-                              ? Colors.redAccent
-                              : Colors.greenAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                  // If show image is toggled, an overlay or container in the middle
-                  if (_showImage)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 24.0),
-                      child: Center(
-                        child: GlassPanel(
-                          padding: const EdgeInsets.all(16),
-                          child: Image.asset(
-                            'assets/agl_logo.png',
-                            height: 100,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
 
                   const SizedBox(height: 16),
 

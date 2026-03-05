@@ -111,6 +111,11 @@ The AGL image will run in the background. We can use Vinagre to open it. The "AG
 
 ## Screenshots
 
-![Dashboard](assets/screenshots/screen_1.png)
-![AGL Integration](assets/screenshots/screen_2.png)
-![Settings](assets/screenshots/screen_3.png)
+![Dashboard](assets/screenshots/screenshot1.png)
+![Flutter App](assets/screenshots/screenshot2.png)
+![Show Image](assets/screenshots/screenshot3.png)
+
+### Video Demonstration
+You can view a demonstration of the application running on a Raspberry Pi 5 with AGL by clicking the link below:
+
+[Watch the Video Demonstration](https://drive.google.com/file/d/1tpVprbUkVEDrXqS3ztI8dA8VvdDQ92R6/view?usp=drive_link)

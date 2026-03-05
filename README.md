@@ -26,8 +26,10 @@ Following steps were taken to integrate this app into AGL image.
 ### 1. Build AGL locally
 The 'agl-ivi-demo-flutter' of the AGL branch was built locally and tested using QEMU and on Raspberry Pi 5. For detailed instructions on how to build the AGL image for x86 (Emulation), please refer to the [AGL Official Documentation](https://docs.automotivelinux.org/en/trout/#01_Getting_Started/02_Building_AGL_Image/06_Building_the_AGL_Image/02_Building_for_x86_%28Emulation_and_Hardware%29/).
 
+**Pre-built images for Raspberry Pi 5 are available [here](https://github.com/jaydon2020/AGL26-yocto-layer/releases/tag/v1.0).**
+
 ### 2. Add Yocto recipe for our flutter app
-Under the `recipes-demo` folder create a new directory named `gsoc26-flutter-quiz`. This directory contains a `.bb` file with the following recipe:
+Under the `recipes-demo` folder create a new directory named `gsoc26-flutter-quiz`. This directory contains a `.bb` file with the following recipe (also available in the [AGL26 Yocto Layer](https://github.com/jaydon2020/AGL26-yocto-layer)):
 
 ```bb
 SUMMARY = "AGL Flutter Hello World Application"

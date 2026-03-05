@@ -71,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isError = false;
 
   late kuksa_val.VALClient _client;
-  double _currentSpeed = 65.0; // Default matches HTML
+  double _currentSpeed = 65.0;
   bool _kuksaConnected = false;
 
   @override
@@ -276,12 +276,8 @@ class _MyHomePageState extends State<MyHomePage> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        splashColor: const Color(
-          0xFF3B82F6,
-        ).withValues(alpha: 0.2), // primary/20
-        highlightColor: const Color(
-          0xFF3B82F6,
-        ).withValues(alpha: 0.1), // primary/10
+        splashColor: const Color(0xFF3B82F6).withOpacity(0.2),
+        highlightColor: const Color(0xFF3B82F6).withOpacity(0.1),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -510,8 +506,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _kuksaConnected
-                              ? Colors.green.withValues(alpha: 0.2)
-                              : Colors.red.withValues(alpha: 0.2),
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.red.withOpacity(0.2),
                           border: Border.all(
                             color: _kuksaConnected ? Colors.green : Colors.red,
                             width: 2,

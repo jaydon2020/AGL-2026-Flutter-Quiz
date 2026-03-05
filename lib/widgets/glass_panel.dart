@@ -15,15 +15,15 @@ class GlassPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color.fromRGBO(15, 23, 42, 0.6), // bg-slate-900/60
+        color: const Color.fromRGBO(15, 23, 42, 0.6),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color.fromRGBO(59, 130, 246, 0.3), // border-blue-500/30
+          color: const Color.fromRGBO(59, 130, 246, 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4),

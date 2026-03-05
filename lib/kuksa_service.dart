@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 // Helper to determine the host dynamically
 String getHost() {
-  const bool isEmbedded = true; // Set to true if running on the pi directly
+  const bool isEmbedded = false; // Set to true if running on the pi directly
   return (Platform.isLinux && !isEmbedded) ? '10.42.0.113' : '127.0.0.1';
 }
 
@@ -87,14 +87,4 @@ class KuksaService {
   // Helper to create CallOptions with the JWT Token
   CallOptions get authOptions =>
       CallOptions(metadata: {'authorization': 'Bearer $_token'});
-
-  // You will add your gRPC methods here later once the protos are generated.
-  // Example: Getting a Value (Speed)
-  /* Future<double> getVehicleSpeed() async {
-    final stub = VALClient(_channel);
-    final request = GetRequest()..entries.add(EntryRequest()..path = "Vehicle.Speed");
-    final response = await stub.get(request, options: authOptions);
-    return response.entries.first.value.doubleValue;
-  }
-  */
 }

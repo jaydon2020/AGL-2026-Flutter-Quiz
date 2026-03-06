@@ -4,8 +4,7 @@ import 'package:flutter/services.dart';
 
 // Helper to determine the host dynamically
 String getHost() {
-  const bool isEmbedded = false; // Set to true if running on the pi directly
-  return (Platform.isLinux && !isEmbedded) ? '10.42.0.113' : '127.0.0.1';
+  return '127.0.0.1';
 }
 
 class KuksaConfig {
